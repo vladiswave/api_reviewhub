@@ -12,6 +12,8 @@ from rest_framework.permissions import AllowAny
 
 
 class UserRegistrationView(APIView):
+    permission_classes = (AllowAny,)
+
     def post(self, request):
         username = request.data.get('username')
         email = request.data.get('email')
@@ -32,14 +34,14 @@ class UserRegistrationView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
-        email = request.data.get('email')
         confirmation_code = request.data.get('confirmation_code')
 
         try:
-            user = CustomUser.objects.get(username=username, email=email)
+            user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed('Invalid username or confirmation code.')
 

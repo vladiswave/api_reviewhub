@@ -22,9 +22,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'customauth.apps.CustomauthConfig',
     'users.apps.UsersConfig',
-    # 'django_filters',
-    # 'reviews.apps.ReviewsConfig',
-    # 'api.apps.ApiConfig',
+    'django_filters',
+    'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [

@@ -4,10 +4,9 @@ from django.core.validators import RegexValidator
 
 
 class UserSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=254, required=True, allow_blank=False,)
+    email = serializers.EmailField(max_length=254, allow_blank=False,)
     username = serializers.CharField(
         max_length=150,
-        required=True,
         allow_blank=False,
         validators=[
             RegexValidator(
@@ -17,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
     )
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES)
 
     def validate(self, data):
         username = data.get('username')
@@ -35,4 +35,4 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = '__all__'
+        exclude = ('id', 'last_login', 'is_superuser', 'is_staff', 'is_active', 'date_joined', 'confirmation_code', 'groups', 'user_permissions')
