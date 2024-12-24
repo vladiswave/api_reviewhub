@@ -4,10 +4,9 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError, NotFound
 from .utils import generate_and_send_confirmation_code
-from users.serializers import UserSerializer
-from django.core.exceptions import ObjectDoesNotExist
+from .serializers import UserRegistrationSerializer
 from rest_framework.permissions import AllowAny
 
 
@@ -18,11 +17,12 @@ class UserRegistrationView(APIView):
         username = request.data.get('username')
         email = request.data.get('email')
 
-        try:
-            user = CustomUser.objects.get(username=username, email=email)
+        user = CustomUser.objects.filter(username=username, email=email).first()
+
+        if user:
             generate_and_send_confirmation_code(user)
-        except ObjectDoesNotExist:
-            serializer = UserSerializer(data=request.data)
+        else:
+            serializer = UserRegistrationSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
             generate_and_send_confirmation_code(user)
@@ -40,13 +40,16 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         username = request.data.get('username')
         confirmation_code = request.data.get('confirmation_code')
 
+        if not username or not confirmation_code:
+            raise ValidationError("Заполните поля 'username' и 'confirmation_code'.")
+
         try:
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
-            raise AuthenticationFailed('Invalid username or confirmation code.')
+            raise NotFound('Проверьте username.')
 
         if user.confirmation_code != confirmation_code:
-            raise AuthenticationFailed('Invalid username or confirmation code.')
+            raise ValidationError('Неправильный код.')
 
         token = AccessToken.for_user(user)
         return Response({
