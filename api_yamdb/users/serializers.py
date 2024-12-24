@@ -18,18 +18,25 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES)
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if not self.context['request'].user.is_admin:
+            representation.pop('role', None)
+        return representation
+
     def validate(self, data):
+        current_user_id = self.context['request'].user.id
         username = data.get('username')
         email = data.get('email')
 
-        if CustomUser.objects.filter(username=username).exists():
-            raise serializers.ValidationError("Username is already taken.")
+        if username and CustomUser.objects.filter(username=username).exclude(id=current_user_id).exists():
+            raise serializers.ValidationError("Этот Username занят другим пользователем.")
 
-        if CustomUser.objects.filter(email=email).exists():
-            raise serializers.ValidationError("Email is already in use.")
+        if email and CustomUser.objects.filter(email=email).exclude(id=current_user_id).exists():
+            raise serializers.ValidationError("Этот Email занят другим пользователем.")
 
         if username == 'me':
-            raise serializers.ValidationError("Username 'me' is not allowed.")
+            raise serializers.ValidationError("Username 'me' использовать нельзя.")
 
         return data
 
