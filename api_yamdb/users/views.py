@@ -1,12 +1,11 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from .models import CustomUser
-from .serializers import UserSerializerForAdmins, UserSerializerForAll
-from .permissions import IsAdmin
-from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+
+from users.models import CustomUser
+from users.permissions import IsAdmin
+from users.serializers import UserSerializerForAdmins, UserSerializerForAll
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -18,26 +17,11 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
 
-    def perform_create(self, serializer):
-        user = serializer.save()
-        return user
-
-    def retrieve(self, request, username=None):
-        try:
-            user = CustomUser.objects.get(username=username)
-        except CustomUser.DoesNotExist:
-            raise NotFound()
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
-
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializerForAll
     permission_classes = (IsAuthenticated,)
-    http_method_names = ('get', 'post', 'patch', 'delete')
-
-    def get_queryset(self):
-        return CustomUser.objects.filter(id=self.request.user.id)
+    http_method_names = ('get', 'patch',)
 
     def get_object(self):
         return get_object_or_404(CustomUser, id=self.request.user.id)
