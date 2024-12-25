@@ -47,7 +47,11 @@ class ReviewAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """Админка для комментариев."""
-    pass
+    list_display = (
+        'text',
+        'author',
+        'pub_date',
+    )
 
 
 admin.site.register(Category, CategoryGenreAdmin)

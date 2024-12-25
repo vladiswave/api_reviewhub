@@ -1,7 +1,8 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
 from .filters import TitleFilter
@@ -51,9 +52,39 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет отзывов."""
-    pass
+    serializer_class = ReviewSerializer
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, pk=self.kwargs['title_id'])
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs['title_id'])
+        if Review.objects.filter(
+            author=self.request.user,
+            title=title
+        ).exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(author=self.request.user, title=title)
+        title.update_rating()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        serializer.instance.title.update_rating()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        instance.title.update_rating()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет комментариев."""
-    pass
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        review = Review.objects.get(pk=self.kwargs['review_id'])
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review = Review.objects.get(pk=self.kwargs['review_id'])
+        serializer.save(author=self.request.user, review=review)

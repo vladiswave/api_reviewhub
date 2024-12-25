@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
 MAX_LENGTH_PREVIEW = 20
@@ -79,6 +80,12 @@ class Title(models.Model):
         blank=True,
         on_delete=models.SET_NULL
     )
+    # добавил рейтинги в модель
+    rating = models.FloatField(default=0)
+
+    def update_rating(self):
+        self.rating = self.reviews.aggregate(models.Avg('score'))['score__avg']
+        self.save()
 
     class Meta:
         ordering = ('-year', 'name')
@@ -96,10 +103,31 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    # score =
-    pass
+    text = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    score = models.IntegerField(
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(10)]
+    )
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('title', 'author')
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
 
 class Comment(models.Model):
     """Модель комментариев."""
-    pass
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
