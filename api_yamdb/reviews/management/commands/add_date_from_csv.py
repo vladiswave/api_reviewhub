@@ -7,14 +7,14 @@ from users.models import CustomUser
 
 
 class Command(BaseCommand):
-    help = 'Import data from CSV files into specified models'
+    help = 'Импорт данных из CSV-файлов в указанные модели'
     model_mapping = {
+        'users': CustomUser,
         'category': Category,
         'genre': Genre,
         'titles': Title,
-        'comments': Comment,
         'review': Review,
-        'users': CustomUser
+        'comments': Comment,
     }
 
     def handle(self, *args, **kwargs):
@@ -43,7 +43,9 @@ class Command(BaseCommand):
                             else:
                                 self.stderr.write(
                                     self.style.ERROR(
-                                        f'Error: Related {field_instance.__name__} with id {row[field]} does not exist.'
+                                        'Error: Связанное поле'
+                                        f' {field_instance.__name__}'
+                                        f' с id {row[field]} не существует.'
                                     )
                                 )
                                 continue
@@ -52,11 +54,11 @@ class Command(BaseCommand):
                     obj, created = model.objects.get_or_create(**obj_data)
                     if created:
                         self.stdout.write(self.style.SUCCESS(
-                            f'{model_name.capitalize()} "{obj}" created.')
+                            f'{model_name.capitalize()} "{obj}" создано.')
                         )
                     else:
                         self.stdout.write(self.style.WARNING(
-                            f'{model_name.capitalize()} "{obj}" alrdy exists.')
+                            f'{model_name.capitalize()} "{obj}" уже создано.')
                         )
         except Exception as e:
             self.stderr.write(self.style.ERROR(f'{file} -> Error: {e}'))
@@ -75,19 +77,21 @@ class Command(BaseCommand):
                         title_object.genre.add(genre_object)
                         self.stdout.write(
                             self.style.SUCCESS(
-                                f'Added "{genre_object}" to "{title_object}".'
+                                f'Добавлено {genre_object} к {title_object}.'
                             )
                         )
                     except Title.DoesNotExist:
                         self.stderr.write(
                             self.style.ERROR(
-                                f'Err: Title {row["title_id"]} does not exist.'
+                                f'Error: Заголовок Title с {row["title_id"]} '
+                                'не существует.'
                             )
                         )
                     except Genre.DoesNotExist:
                         self.stderr.write(
                             self.style.ERROR(
-                                f'Err: Genre {row["genre_id"]} does not exist.'
+                                f'Error: Обзор Genre с {row["genre_id"]} '
+                                'не существует.'
                             )
                         )
         except Exception as e:
