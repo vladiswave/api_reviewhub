@@ -16,8 +16,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         max_length=150,
         allow_blank=False,
         validators=[
-            RegexValidator(regex=r'^[\w.@+-]+\Z'),
-            UniqueValidator(queryset=CustomUser.objects.all())
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message='Username должен состоять только из букв, цифр '
+                'и символов @.+-_'
+            ),
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message='Такой Username уже занят.'
+            )
         ]
     )
     role = serializers.ChoiceField(
