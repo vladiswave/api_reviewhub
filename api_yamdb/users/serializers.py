@@ -6,6 +6,8 @@ from users.models import CustomUser
 
 
 class UserSerializerForAdmins(serializers.ModelSerializer):
+    """Сериализатор для запросов админа к данным пользователя."""
+
     email = serializers.EmailField(
         max_length=254,
         required=True,
@@ -50,6 +52,8 @@ class UserSerializerForAdmins(serializers.ModelSerializer):
 
 
 class UserSerializerForAll(serializers.ModelSerializer):
+    """Сериализатор для собственных данных /me."""
+
     email = serializers.EmailField(
         max_length=254,
         allow_blank=False,

@@ -5,6 +5,8 @@ from rest_framework.validators import UniqueValidator
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    """Сериализатор для регистрации пользователей без аутентификации."""
+
     email = serializers.EmailField(
         max_length=254,
         allow_blank=False,

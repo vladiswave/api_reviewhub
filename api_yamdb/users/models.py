@@ -6,13 +6,15 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    """Модель пользователей."""
+
     email = models.EmailField(unique=True, max_length=254)
     bio = models.TextField(blank=True)
-    ROLE_CHOICES = [
+    ROLE_CHOICES = (
         ('user', 'User'),
         ('moderator', 'Moderator'),
         ('admin', 'Admin'),
-    ]
+    )
     role = models.CharField(
         max_length=10, choices=ROLE_CHOICES, default='user'
     )
@@ -29,3 +31,6 @@ class CustomUser(AbstractUser):
         self.confirmation_code = code
         self.save()
         return code
+
+    class Meta:
+        ordering = ('username',)

@@ -12,6 +12,8 @@ from users.models import CustomUser
 
 
 class UserRegistrationView(APIView):
+    """Вьюсет регистрации пользователей."""
+
     permission_classes = (AllowAny,)
 
     def post(self, request):
@@ -33,6 +35,8 @@ class UserRegistrationView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """Вьюсет для выпуска токена."""
+
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):

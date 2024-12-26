@@ -6,6 +6,8 @@ from users.models import CustomUser
 
 
 def generate_and_send_confirmation_code(user: CustomUser):
+    """Функция отправки кода подтверждения."""
+
     confirmation_code = ''.join(
         random.choices(string.ascii_letters + string.digits, k=8)
     )

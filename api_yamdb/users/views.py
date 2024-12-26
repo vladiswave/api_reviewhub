@@ -9,6 +9,8 @@ from users.serializers import UserSerializerForAdmins, UserSerializerForAll
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет данных пользователей для админа."""
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerForAdmins
     permission_classes = (IsAuthenticated, IsAdmin,)
@@ -19,6 +21,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """Вьюсет профиля пользователя c расширенным доступом."""
+
     serializer_class = UserSerializerForAll
     permission_classes = (IsAuthenticated,)
     http_method_names = ('get', 'patch',)
