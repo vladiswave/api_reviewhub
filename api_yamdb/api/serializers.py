@@ -1,6 +1,10 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework.relations import SlugRelatedField
+from rest_framework.generics import get_object_or_404
 
-from reviews.models import Category, Comment, Genre, Review, Title, User
+
+from reviews.models import Category, Comment, Genre, Review, Title
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -8,7 +12,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = '__all__'
+        exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -16,7 +20,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        fields = '__all__'
+        exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -32,9 +36,45 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для обзоров."""
-    pass
+    author = SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+    score = serializers.IntegerField()
+
+    def validate_score(self, value):
+        """Валидация поля score."""
+        if value < 1 or value > 10:
+            raise ValidationError('Оценка должна быть в диапазоне от 1 до 10.')
+        return value
+
+    def validate(self, data):
+        """Валидация отзыва."""
+        request = self.context['request']
+        author = request.user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if (
+            request.method == 'POST'
+            and Review.objects.filter(title=title, author=author).exists()
+        ):
+            raise ValidationError('Вы уже оставили отзыв!')
+        return data
+
+    class Meta:
+        model = Review
+        fields = '__all__'
+        read_only_fields = ('title',)
 
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор для комментариев."""
-    pass
+    author = SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ('review',)

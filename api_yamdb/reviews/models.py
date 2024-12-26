@@ -1,7 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+
+from users.models import CustomUser
 
 MAX_LENGTH_PREVIEW = 20
 
@@ -9,11 +11,6 @@ MAX_LENGTH_PREVIEW = 20
 def validate_year(value):
     if not (0 < value < timezone.now().year):
         raise ValidationError('Год выпуска не может быть больше текущего')
-
-
-class User(AbstractUser):
-    """Кастомная модель пользователя."""
-    pass
 
 
 class Category(models.Model):
@@ -68,7 +65,6 @@ class Title(models.Model):
         Genre,
         verbose_name='Жанр',
         related_name='titles',
-        null=True,
         blank=True
     )
     category = models.ForeignKey(
@@ -93,13 +89,68 @@ class Review(models.Model):
     """Модель отзывов."""
     title = models.ForeignKey(
         Title,
+        verbose_name='Произведение',
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    # score =
-    pass
+    text = models.TextField(verbose_name='Текст отзыва')
+    author = models.ForeignKey(
+        CustomUser,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    score = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ],
+        verbose_name='Оценка'
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_name_owner'
+            )
+        ]
+        ordering = ('-pub_date',)
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return f'{self.text[:MAX_LENGTH_PREVIEW]} от {self.author}'
 
 
 class Comment(models.Model):
     """Модель комментариев."""
-    pass
+    review = models.ForeignKey(
+        Review,
+        verbose_name='Отзыв',
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    text = models.TextField(verbose_name='Текст комментария')
+    author = models.ForeignKey(
+        CustomUser,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name='comments',
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата создания',
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ('-pub_date',)
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'{self.text[:MAX_LENGTH_PREVIEW]} от {self.author}'
