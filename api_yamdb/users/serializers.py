@@ -34,11 +34,13 @@ class UserSerializerForAdmins(serializers.ModelSerializer):
     )
     first_name = serializers.CharField(
         max_length=150,
-        required=False
+        required=False,
+        allow_blank=True,
     )
     last_name = serializers.CharField(
         max_length=150,
-        required=False
+        required=False,
+        allow_blank=True,
     )
 
     def validate(self, data):
@@ -87,11 +89,13 @@ class UserSerializerForAll(serializers.ModelSerializer):
     )
     first_name = serializers.CharField(
         max_length=150,
-        required=False
+        required=False,
+        allow_blank=True,
     )
     last_name = serializers.CharField(
         max_length=150,
-        required=False
+        required=False,
+        allow_blank=True,
     )
 
     def validate(self, data):
