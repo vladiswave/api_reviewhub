@@ -23,8 +23,8 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для произведений для GET."""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.FloatField(read_only=True)
@@ -32,6 +32,27 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = '__all__'
+
+
+class TitleWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для произведений для POST и PATCH."""
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug'
+    )
+    rating = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        return TitleReadSerializer(instance).data
 
 
 class ReviewSerializer(serializers.ModelSerializer):

@@ -8,7 +8,8 @@ from .filters import TitleFilter
 from users.permissions import (IsAdminOrReadOnly,
                                IsUserOrAdminOrModeratorOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, TitleSerializer, ReviewSerializer)
+                          GenreSerializer, TitleReadSerializer,
+                          TitleWriteSerializer, ReviewSerializer)
 from .mixins import ListCreateDestroyViewSet
 from reviews.models import Category, Genre, Review, Title
 
@@ -32,25 +33,16 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
     ).order_by('rating')
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     http_method_names = ('get', 'post', 'patch', 'delete')
 
-    def perform_create(self, serializer):
-        serializer.save(
-            category=get_object_or_404(
-                Category, slug=self.request.data.get('category')
-            ),
-            genre=Genre.objects.filter(
-                slug__in=self.request.data.getlist('genre')
-            )
-        )
-
-    def perform_update(self, serializer):
-        self.perform_create(serializer)
+    def get_serializer_class(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH']:
+            return TitleWriteSerializer
+        return TitleReadSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
