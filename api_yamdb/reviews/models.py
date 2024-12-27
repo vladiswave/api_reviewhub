@@ -9,7 +9,7 @@ MAX_LENGTH_PREVIEW = 20
 
 
 def validate_year(value):
-    if not (0 < value < timezone.now().year):
+    if not (value < timezone.now().year):
         raise ValidationError('Год выпуска не может быть больше текущего')
 
 
@@ -64,15 +64,13 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         verbose_name='Жанр',
-        related_name='titles',
-        blank=True
+        related_name='titles'
     )
     category = models.ForeignKey(
         Category,
         verbose_name='Категория',
         related_name='titles',
         null=True,
-        blank=True,
         on_delete=models.SET_NULL
     )
 
