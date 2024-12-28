@@ -53,7 +53,7 @@ class Title(models.Model):
         max_length=256,
         verbose_name='Название произведения'
     )
-    year = models.PositiveIntegerField(
+    year = models.IntegerField(
         validators=(validate_year,),
         verbose_name='Год выпуска'
     )
