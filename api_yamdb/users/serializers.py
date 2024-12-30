@@ -1,9 +1,8 @@
-from django.core.validators import RegexValidator
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from users.models import CustomUser
-
+from users.constants import ROLE_CHOICES
+from customauth.validators import validate_email_username_conflict, validate_unique_email, validate_unique_username, validate_username_regex, validate_username_reserved
 
 class UserSerializerForAdmins(serializers.ModelSerializer):
     """Сериализатор для запросов админа к данным пользователя."""
@@ -11,25 +10,13 @@ class UserSerializerForAdmins(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254,
         required=True,
-        validators=[UniqueValidator(queryset=CustomUser.objects.all())]
     )
     username = serializers.CharField(
         max_length=150,
         required=True,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message='Username должен состоять только из букв, цифр '
-                'и символов @.+-_'
-            ),
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message='Такой Username уже занят.'
-            )
-        ]
     )
     role = serializers.ChoiceField(
-        choices=CustomUser.ROLE_CHOICES,
+        choices=ROLE_CHOICES,
         default='user'
     )
     first_name = serializers.CharField(
@@ -43,73 +30,34 @@ class UserSerializerForAdmins(serializers.ModelSerializer):
         allow_blank=True,
     )
 
-    def validate(self, data):
-        username = data.get('username')
-
-        if username == 'me':
-            raise serializers.ValidationError(
-                'Username "me" использовать нельзя.'
-            )
-
-        return data
-
     class Meta:
         model = CustomUser
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
 
+    def validate(self, attrs):
+        if self.instance is None:
+            validate_unique_username(attrs.get('username'))
+        validate_username_reserved(attrs.get('username'))
+        validate_username_regex(attrs.get('username'))
+        validate_unique_email(attrs.get('email'))
+        return super().validate(attrs)
 
-class UserSerializerForAll(serializers.ModelSerializer):
+
+class UserSerializerForAll(UserSerializerForAdmins):
     """Сериализатор для собственных данных /me."""
-
-    email = serializers.EmailField(
-        max_length=254,
-        allow_blank=False,
-        validators=[UniqueValidator(queryset=CustomUser.objects.all())]
-    )
-    username = serializers.CharField(
-        max_length=150,
-        allow_blank=False,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message='Username должен состоять только из букв, цифр '
-                'и символов @.+-_'
-            ),
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message='Такой Username уже занят.'
-            )
-        ]
-    )
     role = serializers.ChoiceField(
-        choices=CustomUser.ROLE_CHOICES,
-        read_only=True
-    )
-    first_name = serializers.CharField(
-        max_length=150,
-        required=False,
-        allow_blank=True,
-    )
-    last_name = serializers.CharField(
-        max_length=150,
-        required=False,
-        allow_blank=True,
+        choices=ROLE_CHOICES,
+        default='user',
+        read_only=True,
     )
 
-    def validate(self, data):
-        username = data.get('username')
-
-        if username == 'me':
-            raise serializers.ValidationError(
-                'Username "me" использовать нельзя.'
-            )
-
-        return data
-
-    class Meta:
-        model = CustomUser
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
-        )
+    def validate(self, attrs):
+        if 'username' in attrs:
+            validate_unique_username(attrs['username'])
+            validate_username_reserved(attrs['username'])
+            validate_username_regex(attrs['username'])
+        if 'email' in attrs:
+            validate_unique_username(attrs['email'])
+        return super().validate(attrs)

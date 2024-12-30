@@ -1,36 +1,33 @@
-import random
-import string
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from .constants import MAX_EMAIL_LENGTH, MAX_NAME_FIELD_LENGTH, MAX_CONFIRMATION_CODE_LENGTH, ROLE_CHOICES, ROLE_ADMIN, ROLE_MODERATOR, MAX_ROLE_LENGTH
 
 
 class CustomUser(AbstractUser):
     """Модель пользователей."""
 
-    email = models.EmailField(unique=True, max_length=254)
-    bio = models.TextField(blank=True)
-    ROLE_CHOICES = (
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
-        ('admin', 'Admin'),
-    )
+    email = models.EmailField(unique=True, max_length=MAX_EMAIL_LENGTH, verbose_name='Email')
+    bio = models.TextField(blank=True, verbose_name='Bio')
     role = models.CharField(
-        max_length=10, choices=ROLE_CHOICES, default='user'
+        max_length=MAX_ROLE_LENGTH, choices=ROLE_CHOICES, default='user', verbose_name='Role'
     )
-    confirmation_code = models.CharField(max_length=8, blank=True, null=True)
-    password = models.CharField(max_length=128, blank=True, null=True)
-    first_name = models.CharField(max_length=150, blank=True, null=True)
-    last_name = models.CharField(max_length=150, blank=True, null=True)
-    username = models.CharField(unique=True, max_length=150)
+    confirmation_code = models.CharField(max_length=MAX_CONFIRMATION_CODE_LENGTH, blank=True, null=True, verbose_name='Confirmation Code')
+    first_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True, null=True, verbose_name='First Name')
+    last_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True, null=True, verbose_name='Last Name')
+    username = models.CharField(unique=True, max_length=MAX_NAME_FIELD_LENGTH, verbose_name='Username')
 
-    def generate_confirmation_code(self):
-        code = ''.join(
-            random.choices(string.ascii_letters + string.digits, k=8)
-        )
-        self.confirmation_code = code
-        self.save()
-        return code
+    @property
+    def is_admin(self):
+        return self.is_superuser or self.is_staff or self.role == ROLE_ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == ROLE_MODERATOR
 
     class Meta:
         ordering = ('username',)
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
+    def __str__(self):
+        return f'{self.username} ({self.role})'

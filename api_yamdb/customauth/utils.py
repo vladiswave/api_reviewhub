@@ -1,21 +1,20 @@
 import random
 import string
-
 from django.core.mail import send_mail
-from users.models import CustomUser
+from django.conf import settings
 
 
-def generate_and_send_confirmation_code(user: CustomUser):
+def generate_confirmation_code():
+    """Функция генерации кода подтверждения."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+
+def send_confirmation_email(user_email, confirmation_code):
     """Функция отправки кода подтверждения."""
-    confirmation_code = ''.join(
-        random.choices(string.ascii_letters + string.digits, k=8)
-    )
-    user.confirmation_code = confirmation_code
-    user.save()
+
     send_mail(
-        subject='Код подтверждения',
-        message=f'Ваш код подтверждения: {confirmation_code}',
-        from_email='yamdb@yamdb.com',
-        recipient_list=[user.email],
+        subject='Confirmation Code',
+        message=f'Your confirmation code is: {confirmation_code}',
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user_email],
     )
-    return confirmation_code
