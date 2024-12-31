@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
-from users.models import CustomUser
+from users.models import YamdbUser
 
 MAX_LENGTH_PREVIEW = 20
 
@@ -93,7 +93,7 @@ class Review(models.Model):
     )
     text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
-        CustomUser,
+        YamdbUser,
         verbose_name='Автор',
         on_delete=models.CASCADE,
         related_name='reviews'
@@ -135,7 +135,7 @@ class Comment(models.Model):
     )
     text = models.TextField(verbose_name='Текст комментария')
     author = models.ForeignKey(
-        CustomUser,
+        YamdbUser,
         verbose_name='Автор',
         on_delete=models.CASCADE,
         related_name='comments',

@@ -5,7 +5,7 @@ class IsAdmin(permissions.BasePermission):
     """Проверка на админа."""
 
     def has_permission(self, request, view):
-        return request.user.role == 'admin' or request.user.is_superuser
+        return request.user.is_authenticated and request.user.is_admin
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -16,10 +16,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             request.method in permissions.SAFE_METHODS
             or (
                 request.user.is_authenticated
-                and (
-                    request.user.role == 'admin'
-                    or request.user.is_superuser
-                )
+                and request.user.is_admin
             )
         )
 
@@ -31,8 +28,7 @@ class IsUserOrAdminOrModeratorOrReadOnly(permissions.BasePermission):
         return request.method in permissions.SAFE_METHODS or (
             request.user.is_authenticated and (
                 request.user == obj.author
-                or request.user.role == 'moderator'
-                or request.user.role == 'admin'
-                or request.user.is_superuser
+                or request.user.is_admin
+                or request.user.is_moderator
             )
         )

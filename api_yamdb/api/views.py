@@ -1,17 +1,38 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 
 from .filters import TitleFilter
-from users.permissions import (IsAdminOrReadOnly,
-                               IsUserOrAdminOrModeratorOrReadOnly)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, TitleReadSerializer,
-                          TitleWriteSerializer, ReviewSerializer)
 from .mixins import ListCreateDestroyViewSet
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsUserOrAdminOrModeratorOrReadOnly,
+)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
+    ReviewSerializer,
+    UserRegistrationSerializer,
+    CustomTokenSerializer,
+    UserSerializerForAdmins,
+    UserSerializerForAll,
+)
 from reviews.models import Category, Genre, Review, Title
+from users.models import YamdbUser
 
 
 class CategoriesViewSet(ListCreateDestroyViewSet):
@@ -81,3 +102,63 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
+
+
+class UserRegistrationView(APIView):
+    """Вьюсет регистрации пользователей."""
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Вьюсет выпуска токена."""
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = CustomTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет данных пользователей."""
+
+    queryset = YamdbUser.objects.all()
+    serializer_class = UserSerializerForAdmins
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    filter_backends = (SearchFilter,)
+    search_fields = ('username',)
+    lookup_field = 'username'
+
+    def get_permissions(self):
+        """Возвращает права доступа в зависимости от действия."""
+        if self.action == 'me' or self.action == 'update_me':
+            return (IsAuthenticated(),)
+        return (IsAdmin(),)
+
+    @action(detail=False, methods=['get', 'delete'],
+            url_path='me', url_name='me')
+    def me(self, request):
+        """Возвращает профиль текущего пользователя."""
+        if request.method == 'DELETE':
+            raise MethodNotAllowed('DELETE')
+        user = self.request.user
+        serializer = UserSerializerForAll(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @me.mapping.patch
+    def update_me(self, request):
+        """Обновляет профиль текущего пользователя."""
+        user = self.request.user
+        serializer = UserSerializerForAll(user, data=request.data,
+                                          partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

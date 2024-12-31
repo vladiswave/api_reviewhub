@@ -3,13 +3,13 @@ import csv
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from reviews.models import Category, Genre, Title, Review, Comment
-from users.models import CustomUser
+from users.models import YamdbUser
 
 
 class Command(BaseCommand):
     help = 'Импорт данных из CSV-файлов в указанные модели'
     model_mapping = {
-        'users': CustomUser,
+        'users': YamdbUser,
         'category': Category,
         'genre': Genre,
         'titles': Title,
