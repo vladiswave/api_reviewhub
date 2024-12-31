@@ -2,6 +2,8 @@ import csv
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
 from users.models import YamdbUser
 
@@ -15,20 +17,19 @@ class Command(BaseCommand):
         'titles': Title,
         'review': Review,
         'comments': Comment,
+        'genre_title': Title.genre.through
     }
 
     def handle(self, *args, **kwargs):
         for model_name, model in self.model_mapping.items():
             self.import_model_data(model_name, model)
-        self.import_genre_title(
-            f'{settings.BASE_DIR}/static/data/genre_title.csv'
-        )
 
     def import_model_data(self, model_name, model):
         csv_file = f'{settings.BASE_DIR}/static/data/{model_name}.csv'
         try:
             with open(csv_file, newline='', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
+                objs_to_create = []
                 for row in reader:
                     obj_data = {}
                     for field in row.keys():
@@ -51,48 +52,13 @@ class Command(BaseCommand):
                                 continue
                         else:
                             obj_data[field] = row[field]
-                    obj, created = model.objects.get_or_create(**obj_data)
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(
-                            f'{model_name.capitalize()} "{obj}" создано.')
-                        )
-                    else:
-                        self.stdout.write(self.style.WARNING(
-                            f'{model_name.capitalize()} "{obj}" уже создано.')
-                        )
+                    objs_to_create.append(model(**obj_data))
+                created_objs = model.objects.bulk_create(
+                    objs_to_create, ignore_conflicts=True
+                )
+                for obj in created_objs:
+                    self.stdout.write(self.style.SUCCESS(
+                        f'{model_name.capitalize()} "{obj}" создано.')
+                    )
         except Exception as e:
             self.stderr.write(self.style.ERROR(f'{file} -> Error: {e}'))
-
-    def import_genre_title(self, csv_file):
-        try:
-            with open(csv_file, newline='', encoding='utf-8') as file:
-                for row in csv.DictReader(file):
-                    try:
-                        title_object = Title.objects.get(
-                            pk=int(row['title_id'])
-                        )
-                        genre_object = Genre.objects.get(
-                            pk=int(row['genre_id'])
-                        )
-                        title_object.genre.add(genre_object)
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f'Добавлено {genre_object} к {title_object}.'
-                            )
-                        )
-                    except Title.DoesNotExist:
-                        self.stderr.write(
-                            self.style.ERROR(
-                                f'Error: Заголовок Title с {row["title_id"]} '
-                                'не существует.'
-                            )
-                        )
-                    except Genre.DoesNotExist:
-                        self.stderr.write(
-                            self.style.ERROR(
-                                f'Error: Обзор Genre с {row["genre_id"]} '
-                                'не существует.'
-                            )
-                        )
-        except Exception as e:
-            self.stderr.write(self.style.ERROR(f'{file} -> Error:- {e}'))

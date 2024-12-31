@@ -11,6 +11,7 @@ class ListCreateDestroyViewSet(
     viewsets.GenericViewSet
 ):
     """Вьюсет для GET, POST и DELETE запросов."""
+
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
