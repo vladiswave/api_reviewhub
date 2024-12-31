@@ -2,13 +2,10 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import YamdbUser
-
-MAX_LENGTH_PREVIEW = 20
-
-
-def validate_year(value):
-    if not (value < timezone.now().year):
-        raise ValidationError('Год выпуска не может быть больше текущего')
+from .validators import characters_validator, validate_year
+from .constants import (
+    MAX_LENGTH_PREVIEW, NAME_LENGTH, SLUG_LENGTH
+)
 
 
 class CategoryGenreBaseModel(models.Model):
@@ -40,7 +37,7 @@ class CommentReviewBaseModel(models.Model):
 
     text = models.TextField(verbose_name='Текст')
     author = models.ForeignKey(
-        CustomUser,
+        YamdbUser,
         verbose_name='Автор',
         on_delete=models.CASCADE,
     )
@@ -118,20 +115,12 @@ class Review(CommentReviewBaseModel):
         Title,
         verbose_name='Произведение',
         on_delete=models.CASCADE,
-        related_name='reviews'
     )
-    text = models.TextField(verbose_name='Текст отзыва')
-    author = models.ForeignKey(
-        YamdbUser,
-        verbose_name='Автор',
-        on_delete=models.CASCADE,
-        related_name='reviews'
-    )
-    score = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10)
-        ],
+    score = models.PositiveSmallIntegerField(
+        validators=(
+            MinValueValidator(1, message='Оценка должна быть не меньше 1.'),
+            MaxValueValidator(10, message='Оценка должна быть не больше 10.')
+        ),
         verbose_name='Оценка'
     )
 
@@ -153,18 +142,6 @@ class Comment(CommentReviewBaseModel):
         Review,
         verbose_name='Отзыв',
         on_delete=models.CASCADE,
-        related_name='comments'
-    )
-    text = models.TextField(verbose_name='Текст комментария')
-    author = models.ForeignKey(
-        YamdbUser,
-        verbose_name='Автор',
-        on_delete=models.CASCADE,
-        related_name='comments',
-    )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата создания',
-        auto_now_add=True
     )
 
     class Meta(CommentReviewBaseModel.Meta):
