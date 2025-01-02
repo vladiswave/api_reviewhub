@@ -170,7 +170,7 @@ class CustomTokenSerializer(serializers.Serializer):
         if user.confirmation_code != attrs['confirmation_code']:
             raise ValidationError('Неправильный код.')
 
-        return {'access': str(AccessToken.for_user(user))}
+        return {'token': str(AccessToken.for_user(user))}
 
 
 class UserSerializerForAdmins(serializers.ModelSerializer):
@@ -207,11 +207,18 @@ class UserSerializerForAdmins(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Валидация вводных данных."""
+        new_username = attrs.get('username')
+        new_email = attrs.get('email')
         if self.instance is None:
-            validate_unique_username(attrs.get('username'))
+            validate_unique_username(new_username)
+            validate_unique_email(new_email)
+        else:
+            if new_username and new_username != self.instance.username:
+                validate_unique_username(new_username)
+            if new_email and new_email != self.instance.email:
+                validate_unique_email(new_email)
         validate_username_reserved(attrs.get('username'))
         validate_username_regex(attrs.get('username'))
-        validate_unique_email(attrs.get('email'))
         return super().validate(attrs)
 
 

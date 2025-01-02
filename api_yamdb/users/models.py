@@ -24,9 +24,9 @@ class YamdbUser(AbstractUser):
         blank=True, null=True, verbose_name='Confirmation Code'
     )
     first_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True,
-                                  null=True, verbose_name='First Name')
+                                  null=False, verbose_name='First Name')
     last_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True,
-                                 null=True, verbose_name='Last Name')
+                                 null=False, verbose_name='Last Name')
     username = models.CharField(unique=True, max_length=MAX_NAME_FIELD_LENGTH,
                                 verbose_name='Username')
     password = models.CharField(max_length=128, blank=True, null=True)

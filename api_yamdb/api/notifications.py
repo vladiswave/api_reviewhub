@@ -17,7 +17,8 @@ def send_confirmation_email(user_email, confirmation_code):
     """Функция отправки кода подтверждения."""
     send_mail(
         subject='Confirmation Code',
-        message=f'Your confirmation code is: {confirmation_code}',
+        message=f'user_email: {user_email}\n'
+                f'confirmation_code: {confirmation_code}',
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user_email],
     )

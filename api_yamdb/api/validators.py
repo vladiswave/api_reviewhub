@@ -14,7 +14,11 @@ def validate_username_regex(value):
     """Валидация username на требования к спец. символам."""
     regex_validator = RegexValidator(
         regex=r'^[\w.@+-]+\Z',
-        message='Username должен состоять из букв, цифр и символов @.+-_'
+        message={
+            "username": [
+                'Username должен состоять из букв, цифр и символов @.+-_'
+            ]
+        }
     )
     regex_validator(value)
 
@@ -23,19 +27,26 @@ def validate_email_username_conflict(email, username):
     """
     Валидация username и email на уникальность.
     """
-    email_exists = YamdbUser.objects.filter(email=email).exists()
-    username_exists = YamdbUser.objects.filter(username=username).exists()
+    user_with_email = YamdbUser.objects.filter(email=email).first()
+    user_with_username = YamdbUser.objects.filter(username=username).first()
 
-    if email_exists != username_exists:
-        raise ValidationError(
-            'Email и Username должны либо существовать вместе.'
-        )
+    if user_with_email and user_with_username:
+        if user_with_email != user_with_username:
+            raise ValidationError({
+                "username": ["Этот username уже занят."],
+                "email": ["Этот email уже занят."]
+            })
+    elif user_with_email or user_with_username:
+        if user_with_username:
+            raise ValidationError({"username": ["Этот username уже занят."]})
+        if user_with_email:
+            raise ValidationError({"email": ["Этот email уже занят."]})
 
 
 def validate_unique_username(username):
     """Валидация username на уникальность."""
     if YamdbUser.objects.filter(username=username).exists():
-        raise ValidationError('Этот Username уже занят.')
+        raise ValidationError('Этот username уже занят.')
 
 
 def validate_unique_email(email):
