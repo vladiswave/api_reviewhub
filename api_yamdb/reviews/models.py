@@ -2,9 +2,13 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import YamdbUser
-from .validators import characters_validator, validate_year
+from .validators import validate_year
 from .constants import (
-    MAX_LENGTH_PREVIEW, NAME_LENGTH, SLUG_LENGTH
+    MAX_PREVIEW_LENGTH,
+    MAX_NAME_LENGTH,
+    MAX_SLUG_LENGTH,
+    MIN_SCORE_VALUE,
+    MAX_SCORE_VALUE
 )
 
 
@@ -12,24 +16,21 @@ class CategoryGenreBaseModel(models.Model):
     """Абстрактная модель для категорий и жанров."""
 
     name = models.CharField(
-        max_length=NAME_LENGTH,
+        max_length=MAX_NAME_LENGTH,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=SLUG_LENGTH,
+        max_length=MAX_SLUG_LENGTH,
         unique=True,
-        verbose_name='Слаг',
-        validators=(characters_validator,)
+        verbose_name='Слаг'
     )
 
     class Meta:
         abstract = True
         ordering = ('name',)
-        verbose_name = 'Элемент'
-        verbose_name_plural = 'Элементы'
 
     def __str__(self):
-        return self.name[:MAX_LENGTH_PREVIEW]
+        return self.name[:MAX_PREVIEW_LENGTH]
 
 
 class CommentReviewBaseModel(models.Model):
@@ -52,7 +53,7 @@ class CommentReviewBaseModel(models.Model):
         default_related_name = '%(class)s' + 's'
 
     def __str__(self):
-        return f'{self.text[:MAX_LENGTH_PREVIEW]} от {self.author}'
+        return f'{self.text[:MAX_PREVIEW_LENGTH]} от {self.author}'
 
 
 class Category(CategoryGenreBaseModel):
@@ -75,10 +76,10 @@ class Title(models.Model):
     """Модель произведений."""
 
     name = models.TextField(
-        max_length=NAME_LENGTH,
+        max_length=MAX_NAME_LENGTH,
         verbose_name='Название'
     )
-    year = models.PositiveSmallIntegerField(
+    year = models.SmallIntegerField(
         validators=(validate_year,),
         verbose_name='Год выпуска'
     )
@@ -105,7 +106,7 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return self.name[:MAX_LENGTH_PREVIEW]
+        return self.name[:MAX_PREVIEW_LENGTH]
 
 
 class Review(CommentReviewBaseModel):
@@ -118,8 +119,14 @@ class Review(CommentReviewBaseModel):
     )
     score = models.PositiveSmallIntegerField(
         validators=(
-            MinValueValidator(1, message='Оценка должна быть не меньше 1.'),
-            MaxValueValidator(10, message='Оценка должна быть не больше 10.')
+            MinValueValidator(
+                MIN_SCORE_VALUE,
+                message=f'Оценка должна быть не меньше {MIN_SCORE_VALUE}.'
+            ),
+            MaxValueValidator(
+                MAX_SCORE_VALUE,
+                message=f'Оценка должна быть не больше {MAX_SCORE_VALUE}.'
+            )
         ),
         verbose_name='Оценка'
     )

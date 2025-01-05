@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
 from api.constants import (
     MAX_CONFIRMATION_CODE_LENGTH,
     MAX_EMAIL_LENGTH,
@@ -8,28 +9,31 @@ from api.constants import (
     ROLE_ADMIN,
     ROLE_CHOICES,
     ROLE_MODERATOR,
+    ROLE_USER,
 )
+from api.validators import validate_username_regex, validate_username_reserved
 
 
 class YamdbUser(AbstractUser):
     """Модель пользователей."""
 
     email = models.EmailField(unique=True, max_length=MAX_EMAIL_LENGTH,
-                              verbose_name='Email')
-    bio = models.TextField(blank=True, verbose_name='Bio')
+                              verbose_name='Эл. почта')
+    bio = models.TextField(blank=True, verbose_name='Биография')
     role = models.CharField(max_length=MAX_ROLE_LENGTH, choices=ROLE_CHOICES,
-                            default='user', verbose_name='Role')
+                            default=ROLE_USER, verbose_name='Роль')
     confirmation_code = models.CharField(
         max_length=MAX_CONFIRMATION_CODE_LENGTH,
-        blank=True, null=True, verbose_name='Confirmation Code'
+        blank=True, null=True, verbose_name='Код подтверждения'
     )
     first_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True,
-                                  null=False, verbose_name='First Name')
+                                  null=False, verbose_name='Имя')
     last_name = models.CharField(max_length=MAX_NAME_FIELD_LENGTH, blank=True,
-                                 null=False, verbose_name='Last Name')
+                                 null=False, verbose_name='Фамилия')
     username = models.CharField(unique=True, max_length=MAX_NAME_FIELD_LENGTH,
-                                verbose_name='Username')
-    password = models.CharField(max_length=128, blank=True, null=True)
+                                verbose_name='Имя пользователя',
+                                validators=(validate_username_reserved,
+                                            validate_username_regex))
 
     @property
     def is_admin(self):
@@ -41,8 +45,8 @@ class YamdbUser(AbstractUser):
 
     class Meta:
         ordering = ('username',)
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         return f'{self.username} ({self.role})'

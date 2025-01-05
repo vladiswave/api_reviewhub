@@ -4,14 +4,12 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-
 
 from .filters import TitleFilter
 from .permissions import (
@@ -60,8 +58,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = TitleFilter
-    ordering_fields = ['name', 'year', 'rating']
-    ordering = ['name']
+    ordering_fields = ('name', 'year', 'rating')
+    ordering = ('name',)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_serializer_class(self):
@@ -146,21 +144,13 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
+    permission_classes = (IsAdmin,)
 
-    def get_permissions(self):
-        """Возвращает права доступа в зависимости от действия."""
-        if self.action == 'me' or self.action == 'update_me':
-            return (IsAuthenticated(),)
-        return (IsAdmin(),)
-
-    @action(detail=False, methods=['get', 'delete'],
-            url_path='me', url_name='me')
+    @action(detail=False, methods=('get',), url_path='me', url_name='me',
+            permission_classes=(IsAuthenticated,))
     def me(self, request):
         """Возвращает профиль текущего пользователя."""
-        if request.method == 'DELETE':
-            raise MethodNotAllowed('DELETE')
-        user = self.request.user
-        serializer = UserSerializerForAll(user)
+        serializer = UserSerializerForAll(self.request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @me.mapping.patch
