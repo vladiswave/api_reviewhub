@@ -4,7 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from users.models import YamdbUser
 from .validators import validate_year
 from .constants import (
-    MAX_LENGTH_PREVIEW,
+    MAX_PREVIEW_LENGTH,
     MAX_NAME_LENGTH,
     MAX_SLUG_LENGTH,
     MIN_SCORE_VALUE,
@@ -30,7 +30,7 @@ class CategoryGenreBaseModel(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return self.name[:MAX_LENGTH_PREVIEW]
+        return self.name[:MAX_PREVIEW_LENGTH]
 
 
 class CommentReviewBaseModel(models.Model):
@@ -53,7 +53,7 @@ class CommentReviewBaseModel(models.Model):
         default_related_name = '%(class)s' + 's'
 
     def __str__(self):
-        return f'{self.text[:MAX_LENGTH_PREVIEW]} от {self.author}'
+        return f'{self.text[:MAX_PREVIEW_LENGTH]} от {self.author}'
 
 
 class Category(CategoryGenreBaseModel):
@@ -106,7 +106,7 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return self.name[:MAX_LENGTH_PREVIEW]
+        return self.name[:MAX_PREVIEW_LENGTH]
 
 
 class Review(CommentReviewBaseModel):
