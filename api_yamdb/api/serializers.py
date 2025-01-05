@@ -1,6 +1,8 @@
+from django.db import models
+from django.shortcuts import get_object_or_404
 from reviews.models import Category, Comment, Genre, Review, Title
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.relations import SlugRelatedField
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -8,16 +10,12 @@ from .constants import (
     MAX_CONFIRMATION_CODE_LENGTH,
     MAX_EMAIL_LENGTH,
     MAX_NAME_FIELD_LENGTH,
-    ROLE_CHOICES,
 )
-from .notifications import (
+from .services import (
     generate_confirmation_code,
     send_confirmation_email
 )
 from .validators import (
-    validate_email_username_conflict,
-    validate_unique_email,
-    validate_unique_username,
     validate_username_regex,
     validate_username_reserved,
 )
@@ -124,31 +122,38 @@ class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=MAX_NAME_FIELD_LENGTH,
         allow_blank=False,
+        validators=(validate_username_reserved,
+                    validate_username_regex),
     )
 
     def validate(self, attrs):
         """Валидация вводных данных."""
         username = attrs.get('username')
-        validate_username_reserved(username)
-        validate_username_regex(username)
-        validate_email_username_conflict(attrs.get('email'), username)
-        return super().validate(attrs)
+        email = attrs.get('email')
+
+        existing_user = YamdbUser.objects.filter(
+            models.Q(username=username) | models.Q(email=email)
+        )
+
+        for user in existing_user:
+            if user.username == username and user.email == email:
+                return attrs
+            if user.username == username:
+                raise ValidationError({"username": ['username уже занят.']})
+            if user.email == email:
+                raise ValidationError({"email": ['email уже занят.']})
+
+        return attrs
 
     def create(self, attrs):
         """Создание или обновление кода для пользователя."""
-        username = attrs.get('username')
-        confirmation_code = generate_confirmation_code()
-        try:
-            user = YamdbUser.objects.get(username=username)
-            user.confirmation_code = confirmation_code
-            user.save()
-        except YamdbUser.DoesNotExist:
-            user = YamdbUser.objects.create(
-                username=username,
-                email=attrs.get('email'),
-                confirmation_code=confirmation_code
-            )
-        send_confirmation_email(user.email, confirmation_code)
+        user, created = YamdbUser.objects.get_or_create(
+            username=attrs['username'],
+            email=attrs['email'],
+        )
+        user.confirmation_code = generate_confirmation_code()
+        user.save()
+        send_confirmation_email(user.email, user.confirmation_code)
         return user
 
 
@@ -162,10 +167,7 @@ class CustomTokenSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         """Валидация вводных данных."""
-        try:
-            user = YamdbUser.objects.get(username=attrs['username'])
-        except YamdbUser.DoesNotExist:
-            raise NotFound('Такой Username не найден.')
+        user = get_object_or_404(YamdbUser, username=attrs['username'])
 
         if user.confirmation_code != attrs['confirmation_code']:
             raise ValidationError('Неправильный код.')
@@ -176,55 +178,15 @@ class CustomTokenSerializer(serializers.Serializer):
 class UserSerializerForAdmins(serializers.ModelSerializer):
     """Сериализатор для запросов админа к данным пользователя."""
 
-    email = serializers.EmailField(
-        max_length=MAX_EMAIL_LENGTH,
-        required=True,
-    )
-    username = serializers.CharField(
-        max_length=MAX_NAME_FIELD_LENGTH,
-        required=True,
-    )
-    role = serializers.ChoiceField(
-        choices=ROLE_CHOICES,
-        default='user'
-    )
-    first_name = serializers.CharField(
-        max_length=MAX_NAME_FIELD_LENGTH,
-        required=False,
-        allow_blank=True,
-    )
-    last_name = serializers.CharField(
-        max_length=MAX_NAME_FIELD_LENGTH,
-        required=False,
-        allow_blank=True,
-    )
-
     class Meta:
         model = YamdbUser
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
 
-    def validate(self, attrs):
-        """Валидация вводных данных."""
-        new_username = attrs.get('username')
-        new_email = attrs.get('email')
-        if self.instance is None:
-            validate_unique_username(new_username)
-            validate_unique_email(new_email)
-        else:
-            if new_username and new_username != self.instance.username:
-                validate_unique_username(new_username)
-            if new_email and new_email != self.instance.email:
-                validate_unique_email(new_email)
-        validate_username_reserved(attrs.get('username'))
-        validate_username_regex(attrs.get('username'))
-        return super().validate(attrs)
-
 
 class UserSerializerForAll(UserSerializerForAdmins):
     """Сериализатор для собственных данных /me."""
 
-    role = serializers.CharField(
-        read_only=True,
-    )
+    class Meta(UserSerializerForAdmins.Meta):
+        read_only_fields = ('role',)
