@@ -130,11 +130,9 @@ class UserRegistrationSerializer(serializers.Serializer):
         """Валидация вводных данных."""
         username = attrs.get('username')
         email = attrs.get('email')
-
         existing_user = YamdbUser.objects.filter(
             models.Q(username=username) | models.Q(email=email)
         )
-
         for user in existing_user:
             if user.username == username and user.email == email:
                 return attrs
@@ -142,7 +140,6 @@ class UserRegistrationSerializer(serializers.Serializer):
                 raise ValidationError({"username": ['username уже занят.']})
             if user.email == email:
                 raise ValidationError({"email": ['email уже занят.']})
-
         return attrs
 
     def create(self, attrs):

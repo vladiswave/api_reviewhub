@@ -58,8 +58,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = TitleFilter
-    ordering_fields = ['name', 'year', 'rating']
-    ordering = ['name']
+    ordering_fields = ('name', 'year', 'rating')
+    ordering = ('name',)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_serializer_class(self):
