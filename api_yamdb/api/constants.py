@@ -7,10 +7,10 @@ ROLE_USER = 'user'
 ROLE_MODERATOR = 'moderator'
 ROLE_ADMIN = 'admin'
 
-ROLE_CHOICES = [
-    (ROLE_USER, 'User'),
-    (ROLE_MODERATOR, 'Moderator'),
-    (ROLE_ADMIN, 'Admin'),
-]
+ROLE_CHOICES = (
+    (ROLE_USER, 'Пользователь'),
+    (ROLE_MODERATOR, 'Модератор'),
+    (ROLE_ADMIN, 'Администратор'),
+)
 
-MAX_ROLE_LENGTH = max(len(role[0]) for role in ROLE_CHOICES)
+MAX_ROLE_LENGTH = max(len(role_name) for role_name, _ in ROLE_CHOICES)
