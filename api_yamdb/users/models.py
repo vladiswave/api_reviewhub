@@ -35,6 +35,11 @@ class YamdbUser(AbstractUser):
                                 validators=(validate_username_reserved,
                                             validate_username_regex))
 
+    class Meta:
+        ordering = ('username',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
     @property
     def is_admin(self):
         return self.is_superuser or self.is_staff or self.role == ROLE_ADMIN
@@ -42,11 +47,6 @@ class YamdbUser(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == ROLE_MODERATOR
-
-    class Meta:
-        ordering = ('username',)
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         return f'{self.username} ({self.role})'
