@@ -137,9 +137,9 @@ class UserRegistrationSerializer(serializers.Serializer):
             if user.username == username and user.email == email:
                 return attrs
             if user.username == username:
-                raise ValidationError({"username": ['username уже занят.']})
+                raise ValidationError({'username': ['username уже занят.']})
             if user.email == email:
-                raise ValidationError({"email": ['email уже занят.']})
+                raise ValidationError({'email': ['email уже занят.']})
         return attrs
 
     def create(self, attrs):
