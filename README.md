@@ -106,6 +106,4 @@ GET http://localhost:port/api/v1/titles/8/reviews/
 ## :busts_in_silhouette: Авторы и контакты 
 * [**Марат Айсин**](https://github.com/mbaisin)
 
-* [**Виталий Багданов**](https://github.com/VitaliyBagdanov)-
-
 * [**Владислав Филиппов**](https://github.com/vladiswave)
