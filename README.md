@@ -104,6 +104,5 @@ GET http://localhost:port/api/v1/titles/8/reviews/
 [redoc.yaml](api_yamdb/static/redoc.yaml).
 
 ## :busts_in_silhouette: Авторы и контакты 
+* [**Владислав Филиппов**](https://github.com/vladiswave) (Team Lead)
 * [**Марат Айсин**](https://github.com/mbaisin)
-
-* [**Владислав Филиппов**](https://github.com/vladiswave)
